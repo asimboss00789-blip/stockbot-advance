@@ -1,31 +1,42 @@
+import * as React from 'react'
+import Link from 'next/link'
+import { cn } from '@/lib/utils'
+import { Button, buttonVariants } from '@/components/ui/button'
+import { IconSeparator } from '@/components/ui/icons'
+
 async function UserOrLogin() {
   return (
     <>
-      {/* Logo links to homepage */}
+      {/* Emoji Logo linking to homepage */}
       <Link href="/">
-        <span style={{ fontSize: '1.5rem' }}>👾</span> {/* Your small logo */}
+        <span style={{ fontSize: '24px', cursor: 'pointer' }}>👾</span>
       </Link>
 
       <div className="flex items-center font-semibold ml-4">
         <IconSeparator className="size-6 text-muted-foreground/50" />
-        
-        {/* StockBot text links to homepage */}
-        <Link href="/">
-          StockBot
-        </Link>
-
+        <a href="/new">StockBot</a>
         <IconSeparator className="size-6 text-muted-foreground/50" />
-        
-        {/* Start New Chat button links to homepage */}
-        <Link href="/">
-          <a
-            className={cn(buttonVariants({ variant: 'ghost' }))}
-            style={{ borderRadius: 0, color: '#F55036', padding: '4px' }}
-          >
-            <span className="flex">Start New Chat</span>
-          </a>
-        </Link>
+        <a
+          href="/new"
+          rel="noopener noreferrer"
+          className={cn(buttonVariants({ variant: 'ghost' }))}
+          style={{ borderRadius: 0, color: '#F55036', padding: '4px' }}
+        >
+          <span className="flex">Start New Chat</span>
+        </a>
       </div>
     </>
+  )
+}
+
+export function Header() {
+  return (
+    <header className="sticky top-0 z-50 flex items-center justify-between w-full h-16 px-4 border-b shrink-0 bg-gradient-to-b from-background/10 via-background/50 to-background/80 backdrop-blur-xl">
+      <div className="flex items-center">
+        <React.Suspense fallback={<div className="flex-1 overflow-auto" />}>
+          <UserOrLogin />
+        </React.Suspense>
+      </div>
+    </header>
   )
 }
