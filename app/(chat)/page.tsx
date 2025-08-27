@@ -17,9 +17,8 @@ export default async function IndexPage() {
         chatId: id,
         messages: [
           {
-            id: nanoid(),     // Unique ID required for TypeScript
+            id: nanoid(),     // Unique ID required
             role: 'system',   // System message
-            type: 'system',   // Some templates require this field
             content: `
 You are EternalStar, a friendly AI assistant. 
 Answer general questions in English.
