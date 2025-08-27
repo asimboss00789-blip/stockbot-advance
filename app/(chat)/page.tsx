@@ -1,7 +1,6 @@
 import { nanoid } from '@/lib/utils'
 import { Chat } from '@/components/chat'
 import { AI } from '@/lib/chat/actions'
-import { Session } from '@/lib/types'
 import { getMissingKeys } from '@/app/actions'
 
 export const metadata = {
@@ -18,7 +17,9 @@ export default async function IndexPage() {
         chatId: id,
         messages: [
           {
-            role: 'system',
+            id: nanoid(),     // Unique ID required for TypeScript
+            role: 'system',   // System message
+            type: 'system',   // Some templates require this field
             content: `
 You are EternalStar, a friendly AI assistant. 
 Answer general questions in English.
