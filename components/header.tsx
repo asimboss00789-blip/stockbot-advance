@@ -4,29 +4,22 @@ import Image from 'next/image'
 
 import { cn } from '@/lib/utils'
 import { Button, buttonVariants } from '@/components/ui/button'
-import {
-  IconGitHub,
-  IconGroq,
-  IconSeparator,
-  IconVercel
-} from '@/components/ui/icons'
-import { Session } from '@/lib/types'
+import { IconSeparator } from '@/components/ui/icons'
 
 async function UserOrLogin() {
   return (
     <>
-      <Link href="https://wow.groq.com/groq-labs/" rel="nofollow">
-        {/* <IconGroq className="size-6 mr-2 dark:hidden" />
-          <IconGroq className="hidden size-6 mr-2 dark:block" /> */}
+      {/* EternalStar logo */}
+      <Link href="/">
         <Image
-          src="/groqlabs-logo-black.png"
-          alt="GroqLabs Logo"
+          src="/eternalstar-logo.png" // Add your logo in /public/
+          alt="EternalStar Logo"
           width={100}
           height={30}
         />
       </Link>
 
-      <div className="flex items-center font-semibold">
+      <div className="flex items-center font-semibold ml-4">
         <IconSeparator className="size-6 text-muted-foreground/50" />
         <a href="/new">StockBot</a>
         <IconSeparator className="size-6 text-muted-foreground/50" />
@@ -50,18 +43,6 @@ export function Header() {
         <React.Suspense fallback={<div className="flex-1 overflow-auto" />}>
           <UserOrLogin />
         </React.Suspense>
-      </div>
-      <div className="flex items-center justify-end space-x-2">
-        <a
-          target="_blank"
-          href="https://github.com/bklieger-groq/groq-gen-ui/"
-          rel="noopener noreferrer"
-          className={cn(buttonVariants({ variant: 'outline' }))}
-          style={{ borderRadius: 0 }}
-        >
-          <IconGitHub />
-          <span className="hidden ml-2 md:flex">GitHub</span>
-        </a>
       </div>
     </header>
   )
