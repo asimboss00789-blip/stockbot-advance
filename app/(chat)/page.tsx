@@ -16,13 +16,17 @@ export default async function IndexPage() {
     <AI
       initialAIState={{
         chatId: id,
-        messages: [],
-        initialPrompt: `
-You are EternalStar, a friendly AI assistant.
-Answer general questions in plain English.
+        messages: [
+          {
+            role: 'system',
+            content: `
+You are EternalStar, a friendly AI assistant. 
+Answer general questions in English.
 If the user asks about a stock symbol or company, provide the stock name, symbol, and current price in readable format.
 Respond naturally and conversationally.
-        `
+            `
+          }
+        ]
       }}
     >
       <Chat id={id} missingKeys={missingKeys} />
