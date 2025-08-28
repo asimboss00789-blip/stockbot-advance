@@ -1,52 +1,43 @@
-# web_ai_assistant.py
+from transformers import pipeline
+import requests
+from bs4 import BeautifulSoup
 
-from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.chrome.options import Options
-import time
-from transformers import AutoModelForCausalLM, AutoTokenizer
+# Hugging Face GPT-2 pipeline for free text generation
+generator = pipeline("text-generation", model="gpt2")
 
-def search_web(query: str, num_results: int = 1):
-    """Perform a Google search and return page sources of top results."""
-    options = Options()
-    options.add_argument("--headless")  # Run Chrome in headless mode
-    options.add_argument("--disable-gpu")
-    
-    driver = webdriver.Chrome(options=options)  # Make sure chromedriver is installed
-    driver.get("https://www.google.com")
+def scrape_text(query: str) -> str:
+    """
+    Scrapes first few paragraphs from Wikipedia for the query.
+    """
+    try:
+        url = f"https://en.wikipedia.org/wiki/{query.replace(' ', '_')}"
+        res = requests.get(url, timeout=5)
+        if res.status_code != 200:
+            return ""
+        soup = BeautifulSoup(res.text, "html.parser")
+        paragraphs = soup.find_all('p')
+        text = " ".join(p.get_text() for p in paragraphs[:3])
+        return text
+    except Exception:
+        return ""
 
-    search_box = driver.find_element("name", "q")
-    search_box.send_keys(query)
-    search_box.send_keys(Keys.RETURN)
-    time.sleep(3)  # wait for results to load
+def generate_answer(user_input: str) -> str:
+    """
+    Generates a smart answer by combining scraped info and AI reasoning.
+    """
+    extra_info = scrape_text(user_input)
+    prompt = f"""
+You are an expert AI assistant. Use the following info to answer the user's question:
+User question: {user_input}
+Extra info: {extra_info}
+Answer clearly and concisely:
+"""
+    output = generator(prompt, max_length=300, do_sample=True)
+    return output[0]['generated_text']
 
-    pages = []
-    results = driver.find_elements("css selector", 'h3')
-    for i, result in enumerate(results[:num_results]):
-        result.click()
-        time.sleep(2)
-        pages.append(driver.page_source)
-        driver.back()
-        time.sleep(1)
-
-    driver.quit()
-    return pages
-
-def summarize_text(text: str, model_name="gpt2"):
-    """Use Hugging Face model to summarize text."""
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForCausalLM.from_pretrained(model_name)
-
-    inputs = tokenizer(f"Summarize the following:\n{text}", return_tensors="pt", truncation=True, max_length=1024)
-    outputs = model.generate(**inputs, max_length=200)
-    summary = tokenizer.decode(outputs[0], skip_special_tokens=True)
-    return summary
-
+# Example test
 if __name__ == "__main__":
-    query = input("Enter your query: ")
-    pages = search_web(query)
-
-    for i, page_content in enumerate(pages):
-        print(f"\n--- Summary of Result {i+1} ---")
-        summary = summarize_text(page_content)
-        print(summary)
+    question = input("Enter your question: ")
+    answer = generate_answer(question)
+    print("\nAI Answer:\n")
+    print(answer)
