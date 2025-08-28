@@ -3,73 +3,64 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from collections import deque
 from typing import Dict
-
-from app.ai_researcher import generate_response  # Import AI researcher
-from conversation_manager import (
-    save_conversation,
-    get_conversations,
-    get_conversation,
-    delete_conversation,
-)  # Manage JSON conversations
+from app.ai_researcher import generate_response  # existing AI logic
+from prompts import PROMPTS  # import all prompts
 
 PORT = int(os.environ.get("PORT", 10000))  # Render-provided port
 
-app = FastAPI(title="Lumina AI Researcher Bot")
+app = FastAPI(title="AI Web Researcher Bot")
 
-# Store conversation memory per user/session (RAM only for live chat)
+# Store conversation history per user/session
 conversation_memory: Dict[str, deque] = {}
 
 class Prompt(BaseModel):
     session_id: str  # Identify user/session
     text: str
+    ai_type: str = "heartmate"  # default AI type
 
 @app.post("/generate")
 async def generate(prompt: Prompt):
+    # Validate AI type
+    if prompt.ai_type not in PROMPTS:
+        raise HTTPException(status_code=400, detail=f"Unknown AI type: {prompt.ai_type}")
+
     # Get or create conversation memory for session
     if prompt.session_id not in conversation_memory:
         conversation_memory[prompt.session_id] = deque(maxlen=70)
-
+    
     memory = conversation_memory[prompt.session_id]
     memory.append({"role": "user", "content": prompt.text})
 
     try:
-        # Generate AI response
-        ai_output = await generate_response(prompt.text, memory)
+        # Generate AI response using the selected prompt from prompts.py
+        ai_prompt = PROMPTS[prompt.ai_type]
+        ai_output = await generate_response(prompt.text, memory, ai_prompt)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-    # Save response in memory
+    # Save AI response in memory
     memory.append({"role": "assistant", "content": ai_output})
 
-    # Save conversation snapshot to JSON (persistent history)
-    save_conversation(prompt.session_id, list(memory))
+    return {
+        "response": ai_output,
+        "memory_length": len(memory),
+        "ai_type": prompt.ai_type
+    }
 
-    return {"response": ai_output, "memory_length": len(memory)}
+@app.get("/sessions")
+async def get_sessions():
+    # List all session IDs and last message for quick reference
+    return [
+        {"session_id": sid, "last_message": memory[-1]["content"] if memory else None}
+        for sid, memory in conversation_memory.items()
+    ]
 
-# -------- Conversation Management Routes -------- #
-
-@app.get("/conversations")
-def list_conversations():
-    """List all saved conversations (max 10)."""
-    return get_conversations()
-
-@app.get("/conversations/{session_id}")
-def read_conversation(session_id: str):
-    """Get one conversation by ID."""
-    convo = get_conversation(session_id)
-    if not convo:
-        raise HTTPException(status_code=404, detail="Conversation not found")
-    return convo
-
-@app.delete("/conversations/{session_id}")
-def remove_conversation(session_id: str):
-    """Delete a conversation by ID."""
-    success = delete_conversation(session_id)
-    if not success:
-        raise HTTPException(status_code=404, detail="Conversation not found")
-    return {"message": f"Conversation {session_id} deleted"}
-
-# ------------------------------------------------ #
+@app.delete("/sessions/{session_id}")
+async def delete_session(session_id: str):
+    if session_id in conversation_memory:
+        del conversation_memory[session_id]
+        return {"status": "deleted", "session_id": session_id}
+    raise HTTPException(status_code=404, detail=f"Session {session_id} not found")
 
 if __name__ == "__main__":
     import uvicorn
