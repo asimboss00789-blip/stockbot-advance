@@ -105,7 +105,7 @@ class AIResearcher:
 # -----------------------------
 if __name__ == "__main__":
     ai = AIResearcher()
-    print("Welcome to the AI Researcher! Type 'exit' to quit.")
+    print("Welcome to the Lumina! Type 'exit' to quit.")
 
     while True:
         user_input = input("You: ")
