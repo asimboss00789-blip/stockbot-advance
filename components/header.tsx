@@ -1,3 +1,5 @@
+'use client'
+
 import * as React from 'react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
@@ -12,10 +14,15 @@ async function UserOrLogin() {
         <span style={{ fontSize: '24px', cursor: 'pointer' }}>👾</span>
       </Link>
 
-      <div className="flex items-center font-semibold ml-4">
+      <div className="flex items-center font-semibold ml-4 space-x-2">
+        {/* Lumina AI Name */}
+        <span style={{ fontSize: '20px' }}>Lumina</span>
+        <span style={{ fontSize: '20px', color: '#F55036' }}>AI</span>
+
         <IconSeparator className="size-6 text-muted-foreground/50" />
-        <a href="/new">advance AI</a>
+        <a href="/new">📚</a>
         <IconSeparator className="size-6 text-muted-foreground/50" />
+
         <a
           href="/new"
           rel="noopener noreferrer"
