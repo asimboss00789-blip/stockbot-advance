@@ -1,6 +1,27 @@
-fastapi
-uvicorn
-transformers
+# Core AI and ML
 torch
+transformers
+safetensors
+
+# Web scraping and HTTP requests
 requests
 beautifulsoup4
+selenium
+
+# Environment variables
+python-dotenv
+
+# FastAPI for web service
+fastapi
+uvicorn
+
+# Optional utils
+termcolor
+lxml
+html5lib
+
+# Hugging Face Hub
+huggingface-hub
+
+# For async web scraping if needed
+aiohttp
