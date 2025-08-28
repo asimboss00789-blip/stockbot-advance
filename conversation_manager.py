@@ -1,43 +1,66 @@
 import json
-from collections import deque
-from typing import List
+import os
+import uuid
+from datetime import datetime
+from typing import Dict, Any, List
 
-class ConversationManager:
-    def __init__(self, filepath: str, max_conversations_per_user: int = 10):
-        self.filepath = filepath
-        self.max_conversations = max_conversations_per_user
-        self._load()
+CONVERSATION_FILE = "conversations.json"
+MAX_CONVERSATIONS = 10  # keep only last 10 conversations
 
-    def _load(self):
-        try:
-            with open(self.filepath, "r") as f:
-                self.data = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            self.data = {}
 
-    def _save(self):
-        with open(self.filepath, "w") as f:
-            json.dump(self.data, f, indent=2)
+def _load_data() -> Dict[str, Any]:
+    """Load conversation data from JSON file."""
+    if not os.path.exists(CONVERSATION_FILE):
+        return {"conversations": []}
+    with open(CONVERSATION_FILE, "r", encoding="utf-8") as f:
+        return json.load(f)
 
-    def get_conversation(self, session_id: str, bot_id: str) -> List[dict]:
-        """Return conversation messages for a session and bot."""
-        return self.data.get(session_id, {}).get(bot_id, [])
 
-    def update_conversation(self, session_id: str, bot_id: str, messages: deque):
-        """Update messages and keep only max_conversations per user."""
-        if session_id not in self.data:
-            self.data[session_id] = {}
-        self.data[session_id][bot_id] = list(messages)
+def _save_data(data: Dict[str, Any]) -> None:
+    """Save conversation data back to JSON file."""
+    with open(CONVERSATION_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
 
-        # Limit number of bots stored per user
-        if len(self.data[session_id]) > self.max_conversations:
-            oldest = list(self.data[session_id].keys())[0]
-            del self.data[session_id][oldest]
 
-        self._save()
+def save_conversation(messages: List[Dict[str, str]]) -> str:
+    """Save a new conversation and return its ID."""
+    data = _load_data()
+    conv_id = str(uuid.uuid4())
+    conversation = {
+        "id": conv_id,
+        "created_at": datetime.utcnow().isoformat(),
+        "messages": messages,
+    }
+    data["conversations"].append(conversation)
 
-    def delete_conversation(self, session_id: str, bot_id: str):
-        """Delete a specific conversation."""
-        if session_id in self.data and bot_id in self.data[session_id]:
-            del self.data[session_id][bot_id]
-            self._save()
+    # Keep only latest N conversations
+    if len(data["conversations"]) > MAX_CONVERSATIONS:
+        data["conversations"] = data["conversations"][-MAX_CONVERSATIONS:]
+
+    _save_data(data)
+    return conv_id
+
+
+def get_conversations() -> List[Dict[str, Any]]:
+    """Get all conversations metadata (id + created_at)."""
+    data = _load_data()
+    return [{"id": c["id"], "created_at": c["created_at"]} for c in data["conversations"]]
+
+
+def get_conversation(conv_id: str) -> Dict[str, Any]:
+    """Get a single conversation by ID."""
+    data = _load_data()
+    for conv in data["conversations"]:
+        if conv["id"] == conv_id:
+            return conv
+    return {}
+
+
+def delete_conversation(conv_id: str) -> bool:
+    """Delete a conversation by ID."""
+    data = _load_data()
+    before = len(data["conversations"])
+    data["conversations"] = [c for c in data["conversations"] if c["id"] != conv_id]
+    after = len(data["conversations"])
+    _save_data(data)
+    return before != after
