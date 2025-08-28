@@ -1,93 +1,75 @@
 import os
-import json
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from collections import deque
-from typing import Dict, List
-from app.ai_researcher import generate_response  # your AI code
+from typing import Dict
 
-PORT = int(os.environ.get("PORT", 10000))
+from app.ai_researcher import generate_response  # Import AI researcher
+from conversation_manager import (
+    save_conversation,
+    get_conversations,
+    get_conversation,
+    delete_conversation,
+)  # Manage JSON conversations
 
-app = FastAPI(title="AI Web Researcher Bot")
+PORT = int(os.environ.get("PORT", 10000))  # Render-provided port
 
-CONVERSATION_FILE = "conversation.json"
-MAX_CONVERSATIONS = 10
-MAX_MESSAGES = 70
+app = FastAPI(title="Lumina AI Researcher Bot")
 
-# Load conversation data or initialize
-if os.path.exists(CONVERSATION_FILE):
-    with open(CONVERSATION_FILE, "r") as f:
-        conversation_data: Dict[str, List[Dict]] = json.load(f)
-else:
-    conversation_data = {}
+# Store conversation memory per user/session (RAM only for live chat)
+conversation_memory: Dict[str, deque] = {}
 
 class Prompt(BaseModel):
-    session_id: str
-    bot_name: str
+    session_id: str  # Identify user/session
     text: str
-
-class DeleteConversation(BaseModel):
-    session_id: str
-    bot_name: str
-
-def save_conversations():
-    with open(CONVERSATION_FILE, "w") as f:
-        json.dump(conversation_data, f, indent=2)
-
-def get_or_create_bot(session_id: str, bot_name: str):
-    user_bots = conversation_data.setdefault(session_id, [])
-    
-    # Check if bot already exists
-    for bot in user_bots:
-        if bot["bot_name"] == bot_name:
-            return bot
-    
-    # Create new bot conversation
-    if len(user_bots) >= MAX_CONVERSATIONS:
-        user_bots.pop(0)  # Remove oldest bot
-    
-    new_bot = {
-        "bot_name": bot_name,
-        "messages": []
-    }
-    user_bots.append(new_bot)
-    return new_bot
 
 @app.post("/generate")
 async def generate(prompt: Prompt):
-    bot_conversation = get_or_create_bot(prompt.session_id, prompt.bot_name)
-    messages = bot_conversation["messages"]
-    
-    # Append user message
-    messages.append({"role": "user", "content": prompt.text})
-    if len(messages) > MAX_MESSAGES:
-        messages.pop(0)  # Remove oldest message
-    
+    # Get or create conversation memory for session
+    if prompt.session_id not in conversation_memory:
+        conversation_memory[prompt.session_id] = deque(maxlen=70)
+
+    memory = conversation_memory[prompt.session_id]
+    memory.append({"role": "user", "content": prompt.text})
+
     try:
-        ai_output = await generate_response(prompt.text, messages)
+        # Generate AI response
+        ai_output = await generate_response(prompt.text, memory)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
-    messages.append({"role": "assistant", "content": ai_output})
-    
-    save_conversations()
-    
-    return {"response": ai_output, "memory_length": len(messages)}
 
-@app.post("/delete_conversation")
-async def delete_conversation(data: DeleteConversation):
-    user_bots = conversation_data.get(data.session_id, [])
-    for i, bot in enumerate(user_bots):
-        if bot["bot_name"] == data.bot_name:
-            user_bots.pop(i)
-            save_conversations()
-            return {"status": "deleted"}
-    raise HTTPException(status_code=404, detail="Conversation not found")
+    # Save response in memory
+    memory.append({"role": "assistant", "content": ai_output})
 
-@app.get("/list_bots/{session_id}")
-async def list_bots(session_id: str):
-    user_bots = conversation_data.get(session_id, [])
-    return {"bots": [bot["bot_name"] for bot in user_bots]}
+    # Save conversation snapshot to JSON (persistent history)
+    save_conversation(prompt.session_id, list(memory))
+
+    return {"response": ai_output, "memory_length": len(memory)}
+
+# -------- Conversation Management Routes -------- #
+
+@app.get("/conversations")
+def list_conversations():
+    """List all saved conversations (max 10)."""
+    return get_conversations()
+
+@app.get("/conversations/{session_id}")
+def read_conversation(session_id: str):
+    """Get one conversation by ID."""
+    convo = get_conversation(session_id)
+    if not convo:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    return convo
+
+@app.delete("/conversations/{session_id}")
+def remove_conversation(session_id: str):
+    """Delete a conversation by ID."""
+    success = delete_conversation(session_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    return {"message": f"Conversation {session_id} deleted"}
+
+# ------------------------------------------------ #
 
 if __name__ == "__main__":
     import uvicorn
