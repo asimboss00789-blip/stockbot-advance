@@ -1,26 +1,43 @@
+# app.py (in root folder)
+
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from ai_researcher import fetch_and_answer  # Our web-fetching AI function
+from collections import deque
+from typing import Dict
 
-PORT = int(os.environ.get("PORT", 10000))  # Render port
+from app.ai_researcher import generate_response  # Import from app folder
 
-app = FastAPI(title="AI Web Researcher")
+PORT = int(os.environ.get("PORT", 10000))  # Render-provided port
 
-class Query(BaseModel):
-    url: str
-    question: str
+app = FastAPI(title="AI Web Researcher Bot")
 
-@app.post("/ask")
-def ask(query: Query):
-    """
-    Takes a URL and a question, fetches content, and returns AI answer.
-    """
+# Store conversation history per user/session
+conversation_memory: Dict[str, deque] = {}
+
+class Prompt(BaseModel):
+    session_id: str  # Identify user/session
+    text: str
+
+@app.post("/generate")
+async def generate(prompt: Prompt):
+    # Get or create conversation memory for session
+    if prompt.session_id not in conversation_memory:
+        conversation_memory[prompt.session_id] = deque(maxlen=70)
+    
+    memory = conversation_memory[prompt.session_id]
+    memory.append({"role": "user", "content": prompt.text})
+
     try:
-        answer = fetch_and_answer(query.url, query.question)
-        return {"answer": answer}
+        # Generate AI response using ai_researcher
+        ai_output = await generate_response(prompt.text, memory)
     except Exception as e:
-        return {"error": str(e)}
+        raise HTTPException(status_code=500, detail=str(e))
+
+    # Save AI response in memory
+    memory.append({"role": "assistant", "content": ai_output})
+
+    return {"response": ai_output, "memory_length": len(memory)}
 
 if __name__ == "__main__":
     import uvicorn
