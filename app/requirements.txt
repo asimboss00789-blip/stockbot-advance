@@ -37,3 +37,7 @@ uvicorn
 termcolor
 huggingface-hub
 tqdm
+#-------------------------------
+feedparser
+apscheduler
+pydantic
