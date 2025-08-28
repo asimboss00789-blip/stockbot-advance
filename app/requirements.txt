@@ -2,6 +2,5 @@ fastapi
 uvicorn
 transformers
 torch
-selenium
-beautifulsoup4
 requests
+beautifulsoup4
