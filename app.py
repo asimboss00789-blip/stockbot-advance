@@ -1,67 +1,79 @@
+# app.py
 import os
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from collections import deque
-from typing import Dict
-from app.ai_researcher import generate_response  # existing AI logic
-from prompts import PROMPTS  # import all prompts
+from prompts import PROMPTS
+from conversation_manager import ConversationManager
 
-PORT = int(os.environ.get("PORT", 10000))  # Render-provided port
+# Initialize Conversation Manager (max 10 conversations stored per GPT)
+conversation_manager = ConversationManager(max_conversations=10)
 
-app = FastAPI(title="AI Web Researcher Bot")
+class AIResearcher:
+    def __init__(self):
+        self.current_gpt = "Lumina"  # default GPT
+        self.memory = conversation_manager
 
-# Store conversation history per user/session
-conversation_memory: Dict[str, deque] = {}
+    def switch_gpt(self, gpt_name: str):
+        if gpt_name in PROMPTS:
+            self.current_gpt = gpt_name
+            return f"Switched to GPT: {gpt_name}"
+        return f"GPT '{gpt_name}' not found!"
 
-class Prompt(BaseModel):
-    session_id: str  # Identify user/session
-    text: str
-    ai_type: str = "heartmate"  # default AI type
+    def process_input(self, user_input: str):
+        prompt = PROMPTS.get(self.current_gpt, "")
 
-@app.post("/generate")
-async def generate(prompt: Prompt):
-    # Validate AI type
-    if prompt.ai_type not in PROMPTS:
-        raise HTTPException(status_code=400, detail=f"Unknown AI type: {prompt.ai_type}")
+        # Retrieve previous conversation history for context
+        conversation_history = self.memory.get_conversation(self.current_gpt)
 
-    # Get or create conversation memory for session
-    if prompt.session_id not in conversation_memory:
-        conversation_memory[prompt.session_id] = deque(maxlen=70)
-    
-    memory = conversation_memory[prompt.session_id]
-    memory.append({"role": "user", "content": prompt.text})
+        # Here you would normally send: prompt + conversation_history + user_input to AI
+        ai_response = f"[{self.current_gpt}] responds to: {user_input}"
 
-    try:
-        # Generate AI response using the selected prompt from prompts.py
-        ai_prompt = PROMPTS[prompt.ai_type]
-        ai_output = await generate_response(prompt.text, memory, ai_prompt)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        # Save messages to conversation memory
+        self.memory.save_message(self.current_gpt, "user", user_input)
+        self.memory.save_message(self.current_gpt, "ai", ai_response)
 
-    # Save AI response in memory
-    memory.append({"role": "assistant", "content": ai_output})
+        return ai_response
 
-    return {
-        "response": ai_output,
-        "memory_length": len(memory),
-        "ai_type": prompt.ai_type
-    }
+    def list_conversations(self):
+        # Returns a list of all saved conversation names
+        return self.memory.list_conversations()
 
-@app.get("/sessions")
-async def get_sessions():
-    # List all session IDs and last message for quick reference
-    return [
-        {"session_id": sid, "last_message": memory[-1]["content"] if memory else None}
-        for sid, memory in conversation_memory.items()
-    ]
-
-@app.delete("/sessions/{session_id}")
-async def delete_session(session_id: str):
-    if session_id in conversation_memory:
-        del conversation_memory[session_id]
-        return {"status": "deleted", "session_id": session_id}
-    raise HTTPException(status_code=404, detail=f"Session {session_id} not found")
+    def delete_conversation(self, gpt_name: str):
+        return self.memory.delete_conversation(gpt_name)
 
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=PORT)
+    ai = AIResearcher()
+    print("Welcome to AI Researcher! Type 'exit' to quit.")
+    print("Available GPTs:", ", ".join(PROMPTS.keys()))
+
+    while True:
+        user_input = input("You: ").strip()
+
+        if user_input.lower() in ["exit", "quit"]:
+            break
+
+        # Switch GPT command
+        if user_input.startswith("/switch"):
+            parts = user_input.split(maxsplit=1)
+            if len(parts) > 1:
+                print(ai.switch_gpt(parts[1]))
+            else:
+                print("Usage: /switch [GPT name]")
+            continue
+
+        # List conversations
+        if user_input.startswith("/list"):
+            conversations = ai.list_conversations()
+            print("Saved Conversations:", conversations)
+            continue
+
+        # Delete a conversation
+        if user_input.startswith("/delete"):
+            parts = user_input.split(maxsplit=1)
+            if len(parts) > 1:
+                print(ai.delete_conversation(parts[1]))
+            else:
+                print("Usage: /delete [GPT name]")
+            continue
+
+        # Regular AI input
+        response = ai.process_input(user_input)
+        print(f"AI: {response}")
