@@ -4,7 +4,7 @@ import { AI } from '@/lib/chat/actions'
 import { getMissingKeys } from '@/app/actions'
 
 export const metadata = {
-  title: 'EternalStar StockBot'
+  title: 'Lumina AI'
 }
 
 export default async function IndexPage() {
