@@ -1,12 +1,21 @@
 # Core AI and ML
-torch
+torch==2.8.0
 transformers
 safetensors
+spacy
+gensim
+scikit-learn
+vaderSentiment
+numpy
+pandas
 
 # Web scraping and HTTP requests
 requests
 beautifulsoup4
 selenium
+aiohttp
+lxml
+html5lib
 
 # Environment variables
 python-dotenv
@@ -15,13 +24,8 @@ python-dotenv
 fastapi
 uvicorn
 
-# Optional utils
-termcolor
-lxml
-html5lib
-
 # Hugging Face Hub
 huggingface-hub
 
-# For async web scraping if needed
-aiohttp
+# Optional utils
+termcolor
