@@ -1,17 +1,26 @@
+import os
 from fastapi import FastAPI
 from pydantic import BaseModel
-from ai_researcher import generate_answer
+from ai_researcher import fetch_and_answer  # Our web-fetching AI function
 
-app = FastAPI(title="AI Researcher Bot")
-PORT = int(os.environ.get("PORT", 10000))
+PORT = int(os.environ.get("PORT", 10000))  # Render port
 
-class Prompt(BaseModel):
-    text: str
+app = FastAPI(title="AI Web Researcher")
 
-@app.post("/generate")
-def generate(prompt: Prompt):
-    answer = generate_answer(prompt.text)
-    return {"answer": answer}
+class Query(BaseModel):
+    url: str
+    question: str
+
+@app.post("/ask")
+def ask(query: Query):
+    """
+    Takes a URL and a question, fetches content, and returns AI answer.
+    """
+    try:
+        answer = fetch_and_answer(query.url, query.question)
+        return {"answer": answer}
+    except Exception as e:
+        return {"error": str(e)}
 
 if __name__ == "__main__":
     import uvicorn
