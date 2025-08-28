@@ -1,31 +1,39 @@
-# Core AI and ML
-torch==2.8.0
+# -----------------------------
+# Core AI / NLP
+# -----------------------------
+torch
 transformers
 safetensors
+sentencepiece
 spacy
-gensim
-scikit-learn
-vaderSentiment
-numpy
-pandas
+en_core_web_sm
 
-# Web scraping and HTTP requests
+# -----------------------------
+# Web Scraping & HTTP Requests
+# -----------------------------
 requests
 beautifulsoup4
-selenium
-aiohttp
 lxml
 html5lib
+selenium
+aiohttp
 
-# Environment variables
+# -----------------------------
+# Data / Environment
+# -----------------------------
 python-dotenv
+pandas
+numpy
 
-# FastAPI for web service
+# -----------------------------
+# Web Service / API (Optional)
+# -----------------------------
 fastapi
 uvicorn
 
-# Hugging Face Hub
-huggingface-hub
-
-# Optional utils
+# -----------------------------
+# Utility / Optional
+# -----------------------------
 termcolor
+huggingface-hub
+tqdm
