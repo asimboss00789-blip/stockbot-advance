@@ -3,7 +3,7 @@ import { nanoid } from '@/lib/utils'
 import { Chat } from '@/components/chat'
 import { AI } from '@/lib/chat/actions'
 import { getMissingKeys } from '@/app/actions'
-import ChatLayout from '@/components/chat-layout'
+import { ChatLayout } from '@/components/chat-layout' // <- named import
 
 export const metadata = {
   title: 'Lumina AI'
@@ -13,7 +13,6 @@ export default async function IndexPage() {
   const chatId = nanoid()
   const missingKeys = await getMissingKeys()
 
-  // Use a plain system message (string content) instead of a tool-result part
   const initialMessages = [
     {
       id: nanoid(),
