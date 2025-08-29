@@ -1,88 +1,87 @@
-"use client"
+'use client'
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import React, { useState, useEffect } from 'react'
 
-export default function LoginForm() {
-  const router = useRouter()
-  const [isExpanded, setIsExpanded] = useState(false)
+interface LoginFormProps {
+  onLoginSuccess: (username: string) => void
+}
+
+export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
   const [isSignup, setIsSignup] = useState(false)
-  const [name, setName] = useState("")
-  const [password, setPassword] = useState("")
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [darkMode, setDarkMode] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Persist theme and user session
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('darkMode')
+    if (savedTheme) setDarkMode(savedTheme === 'true')
+
+    const savedUser = localStorage.getItem('luminaUser')
+    if (savedUser) onLoginSuccess(savedUser)
+  }, [])
+
+  useEffect(() => {
+    document.body.classList.toggle('dark', darkMode)
+    localStorage.setItem('darkMode', darkMode.toString())
+  }, [darkMode])
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    if (!username || !password) return
 
-    const res = await fetch("/api/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, password, signup: isSignup })
-    })
-
-    if (res.ok) {
-      // ✅ redirect to chat after login/signup success
-      router.push("/chat")
-    } else {
-      alert("Login/Signup failed")
-    }
+    // Save user session
+    localStorage.setItem('luminaUser', username)
+    onLoginSuccess(username)
   }
 
   return (
-    <div className="flex flex-col items-center gap-4 p-6">
-      {!isExpanded ? (
-        <button
-          onClick={() => setIsExpanded(true)}
-          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition"
-        >
-          Login
-        </button>
-      ) : (
-        <form
-          onSubmit={handleSubmit}
-          className="flex flex-col gap-4 bg-gray-100 dark:bg-gray-800 p-6 rounded-lg shadow-lg w-80"
-        >
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setIsSignup(false)}
-              className={`flex-1 px-4 py-2 rounded ${!isSignup ? "bg-blue-600 text-white" : "bg-gray-300 dark:bg-gray-700"}`}
-            >
-              Login
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsSignup(true)}
-              className={`flex-1 px-4 py-2 rounded ${isSignup ? "bg-blue-600 text-white" : "bg-gray-300 dark:bg-gray-700"}`}
-            >
-              Signup
-            </button>
-          </div>
+    <div className="w-full max-w-md mx-auto p-6 rounded-lg shadow-lg bg-white dark:bg-gray-800 transition-colors duration-300">
+      <h2 className="text-xl font-bold mb-4 text-center text-gray-900 dark:text-gray-100">
+        {isSignup ? 'Sign Up' : 'Login'}
+      </h2>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <input
+          type="text"
+          placeholder="Name"
+          className="p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          className="p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
 
-          <input
-            type="text"
-            placeholder="Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="px-3 py-2 border rounded"
-            required
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="px-3 py-2 border rounded"
-            required
-          />
-
+        <div className="flex justify-between items-center">
           <button
             type="submit"
-            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-500 transition"
+            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
           >
             Done
           </button>
-        </form>
-      )}
+          <button
+            type="button"
+            className="text-sm text-blue-500 hover:underline"
+            onClick={() => setIsSignup(!isSignup)}
+          >
+            {isSignup ? 'Login instead' : 'Sign up'}
+          </button>
+        </div>
+      </form>
+
+      <div className="mt-4 flex justify-center items-center gap-2">
+        <span className="text-gray-700 dark:text-gray-300">Dark Mode</span>
+        <input
+          type="checkbox"
+          checked={darkMode}
+          onChange={() => setDarkMode(!darkMode)}
+          className="cursor-pointer"
+        />
+      </div>
     </div>
   )
 }
