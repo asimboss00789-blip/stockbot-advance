@@ -1,31 +1,43 @@
 'use client'
 
-import * as React from 'react'
 import { useState } from 'react'
+import { Trash2, BookOpen } from 'lucide-react'
 import { ChatList } from './chat-list'
 import { ChatPanel } from './chat-panel'
-import { Trash2, BookOpen } from 'lucide-react'
 
 interface ChatLayoutProps {
-  children: React.ReactNode
+  chatId: string
+  missingKeys: string[]
 }
 
-export default function ChatLayout({ children }: ChatLayoutProps) {
-  const [theme, setTheme] = useState<'light' | 'dark'>('light')
+export function ChatLayout({ chatId, missingKeys }: ChatLayoutProps) {
+  const [input, setInput] = useState('')
+  const [isAtBottom, setIsAtBottom] = useState(true)
 
-  const toggleTheme = () => {
-    setTheme(theme === 'light' ? 'dark' : 'light')
-    document.documentElement.classList.toggle('dark')
+  const scrollToBottom = () => {
+    const chatContainer = document.getElementById('chat-container')
+    if (chatContainer) {
+      chatContainer.scrollTop = chatContainer.scrollHeight
+      setIsAtBottom(true)
+    }
   }
 
   return (
-    <div className={`flex flex-col min-h-screen ${theme}`}>
-      <div className="flex justify-between p-4 border-b">
-        <button onClick={toggleTheme}>
-          Toggle {theme === 'light' ? 'Dark' : 'Light'}
-        </button>
+    <div className="flex flex-col h-screen">
+      <div
+        id="chat-container"
+        className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-900"
+      >
+        <ChatList messages={[]} isShared={false} />
       </div>
-      <main className="flex-1">{children}</main>
+
+      <ChatPanel
+        id={chatId}
+        input={input}
+        setInput={setInput}
+        isAtBottom={isAtBottom}
+        scrollToBottom={scrollToBottom}
+      />
     </div>
   )
 }
