@@ -2,15 +2,13 @@
 
 import * as React from 'react'
 import { useState, useEffect } from 'react'
-import { Button } from '@/components/ui/button'
-import { PromptForm } from '@/components/prompt-form'
-import { ButtonScrollToBottom } from '@/components/button-scroll-to-bottom'
-import { IconShare } from '@/components/ui/icons'
-import { FooterText } from '@/components/footer'
+import { nanoid } from '@/lib/utils'
+import { ButtonScrollToBottom } from './button-scroll-to-bottom'
+import { PromptForm } from './prompt-form'
+import { FooterText } from './footer'
+import { UserMessage } from './stocks/message'
 import { useAIState, useActions, useUIState } from 'ai/rsc'
 import type { AI } from '@/lib/chat/actions'
-import { nanoid } from 'nanoid'
-import { UserMessage } from './stocks/message'
 
 export interface ChatPanelProps {
   id?: string
@@ -31,7 +29,7 @@ export function ChatPanel({
 }: ChatPanelProps) {
   const [aiState] = useAIState()
   const [messages, setMessages] = useUIState<typeof AI>()
-  const { submitUserMessage } = useActions()
+  const { submitUserMessage } = useActions<typeof AI>()
 
   const exampleMessages = [
     {
@@ -45,63 +43,42 @@ export function ChatPanel({
       message: 'Show me a stock chart for $GOOGL'
     },
     {
-      heading: 'What are some recent',
-      subheading: 'events about Amazon?',
+      heading: 'Recent events',
+      subheading: 'about Amazon',
       message: 'What are some recent events about Amazon?'
-    },
-    {
-      heading: "What are Microsoft's",
-      subheading: 'latest financials?',
-      message: "What are Microsoft's latest financials?"
-    },
-    {
-      heading: 'How is the stock market',
-      subheading: 'performing today by sector?',
-      message: 'How is the stock market performing today by sector?'
-    },
-    {
-      heading: 'Show me a screener',
-      subheading: 'to find new stocks',
-      message: 'Show me a screener to find new stocks'
     }
   ]
 
-  interface ExampleMessage {
-    heading: string
-    subheading: string
-    message: string
-  }
-
-  const [randExamples, setRandExamples] = useState<ExampleMessage[]>([])
+  const [randExamples, setRandExamples] = useState(exampleMessages)
 
   useEffect(() => {
-    const shuffledExamples = [...exampleMessages].sort(() => 0.5 - Math.random())
-    setRandExamples(shuffledExamples)
+    const shuffled = [...exampleMessages].sort(() => 0.5 - Math.random())
+    setRandExamples(shuffled)
   }, [])
 
   return (
-    <div className="fixed inset-x-0 bottom-0 w-full bg-gradient-to-b from-muted/30 from-0% to-muted/30 to-50% duration-300 ease-in-out animate-in dark:from-background/10 dark:from-10% dark:to-background/80 peer-[[data-state=open]]:group-[]:lg:pl-[250px] peer-[[data-state=open]]:group-[]:xl:pl-[300px]">
-      <ButtonScrollToBottom isAtBottom={isAtBottom} scrollToBottom={scrollToBottom} />
+    <div className="fixed inset-x-0 bottom-0 w-full bg-muted/30">
+      <ButtonScrollToBottom
+        isAtBottom={isAtBottom}
+        scrollToBottom={scrollToBottom}
+      />
 
       <div className="mx-auto sm:max-w-2xl sm:px-4">
         <div className="mb-4 grid grid-cols-2 gap-2 px-4 sm:px-0">
           {messages.length === 0 &&
-            randExamples.map((example, index) => (
+            randExamples.map(example => (
               <div
                 key={example.heading}
-                className={`
-                  cursor-pointer border bg-white p-4 
-                  hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-900
-                  ${index >= 4 ? 'hidden md:block' : ''}
-                  ${index >= 2 ? 'hidden 2xl:block' : ''}
-                `}
+                className="cursor-pointer border bg-white p-4 hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-900"
                 onClick={async () => {
-                  setMessages(currentMessages => [
-                    ...currentMessages,
-                    { id: nanoid(), display: <UserMessage>{example.message}</UserMessage> }
-                  ])
-                  const responseMessage = await submitUserMessage(example.message)
-                  setMessages(currentMessages => [...currentMessages, responseMessage])
+                  const newMessage = {
+                    id: nanoid(),
+                    display: <UserMessage>{example.message}</UserMessage>
+                  }
+                  setMessages(current => [...current, newMessage])
+
+                  const response = await submitUserMessage(example.message)
+                  setMessages(current => [...current, response])
                 }}
               >
                 <div className="text-sm font-semibold">{example.heading}</div>
