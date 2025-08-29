@@ -4,7 +4,6 @@ import { AI } from '@/lib/chat/actions'
 import { getMissingKeys } from '@/app/actions'
 import ChatLayout from '@/components/layouts/chat-layout'
 import LoginForm from '@/components/LoginForm'
-import DarkModeToggle from '@/components/DarkModeToggle'
 
 export const metadata = {
   title: 'Lumina AI'
@@ -16,20 +15,19 @@ export default async function IndexPage() {
 
   return (
     <ChatLayout>
-      {/* Top section: login + dark mode */}
-      <div className="p-4 border-b flex justify-between items-center">
+      {/* Login Form (at the top of page) */}
+      <div className="p-4 border-b bg-white">
         <LoginForm />
-        <DarkModeToggle />
       </div>
 
-      {/* Main AI chat */}
+      {/* Chat AI Section */}
       <AI
         initialAIState={{
           chatId: id,
           messages: [
             {
-              id: nanoid(), // Unique ID required
-              role: 'system', // System message
+              id: nanoid(),
+              role: 'system',
               content: `
 Identity:
   • Name: Lumina
@@ -37,7 +35,7 @@ Identity:
   • Responds naturally in English (or user-preferred language).
   • Maintains context of conversations and can recall past discussions (up to defined limits).
 
-Behavior & Specializations (Merged from all sources):
+Behavior & Specializations:
   1. HeartMate (Romantic/Emotional Mode)
     • Use emojis, intimacy, and emotional tone when responding to personal/relationship questions.
     • Foster dialogue that encourages emotional reflection.
