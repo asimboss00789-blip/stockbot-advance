@@ -1,3 +1,5 @@
+'use client'
+
 import * as React from 'react'
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
@@ -19,6 +21,12 @@ export interface ChatPanelProps {
   scrollToBottom: () => void
 }
 
+interface ExampleMessage {
+  heading: string
+  subheading: string
+  message: string
+}
+
 export function ChatPanel({
   id,
   title,
@@ -31,7 +39,7 @@ export function ChatPanel({
   const [messages, setMessages] = useUIState<typeof AI>()
   const { submitUserMessage } = useActions()
 
-  const exampleMessages = [
+  const exampleMessages: ExampleMessage[] = [
     {
       heading: 'What is the price',
       subheading: 'of Apple Inc.?',
@@ -64,18 +72,10 @@ export function ChatPanel({
     }
   ]
 
-  interface ExampleMessage {
-    heading: string
-    subheading: string
-    message: string
-  }
-
   const [randExamples, setRandExamples] = useState<ExampleMessage[]>([])
 
   useEffect(() => {
-    const shuffledExamples = [...exampleMessages].sort(
-      () => 0.5 - Math.random()
-    )
+    const shuffledExamples = [...exampleMessages].sort(() => 0.5 - Math.random())
     setRandExamples(shuffledExamples)
   }, [])
 
@@ -107,19 +107,12 @@ export function ChatPanel({
                     }
                   ])
 
-                  const responseMessage = await submitUserMessage(
-                    example.message
-                  )
-                  setMessages(currentMessages => [
-                    ...currentMessages,
-                    responseMessage
-                  ])
+                  const responseMessage = await submitUserMessage(example.message)
+                  setMessages(currentMessages => [...currentMessages, responseMessage])
                 }}
               >
                 <div className="text-sm font-semibold">{example.heading}</div>
-                <div className="text-sm text-zinc-600">
-                  {example.subheading}
-                </div>
+                <div className="text-sm text-zinc-600">{example.subheading}</div>
               </div>
             ))}
         </div>
