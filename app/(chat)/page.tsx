@@ -11,7 +11,7 @@ export default async function ChatPage() {
   const initialMessages = [
     {
       id: nanoid(),
-      role: 'system',
+      role: 'tool',
       content: `
 Identity:
   • Name: Lumina
