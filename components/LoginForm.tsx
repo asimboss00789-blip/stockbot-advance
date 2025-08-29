@@ -3,90 +3,77 @@
 import { useState } from "react"
 
 export default function LoginForm() {
-  const [expanded, setExpanded] = useState(false)
-  const [mode, setMode] = useState<"login" | "signup">("login")
-  const [name, setName] = useState("")
-  const [pass, setPass] = useState("")
-  const [user, setUser] = useState<string | null>(null)
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!name || !pass) return
+    setLoading(true)
+    setError("")
 
-    // Simulate login/signup success
-    setUser(name)
-    setExpanded(false)
-    setName("")
-    setPass("")
-  }
+    try {
+      // Example login request (replace with your API route or NextAuth)
+      const res = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+      })
 
-  if (user) {
-    return (
-      <div className="flex items-center gap-3">
-        <span className="font-semibold">Hi, {user}</span>
-        <button
-          onClick={() => setUser(null)}
-          className="px-3 py-1 text-sm bg-gray-200 rounded hover:bg-gray-300"
-        >
-          Logout
-        </button>
-      </div>
-    )
+      if (!res.ok) {
+        throw new Error("Invalid credentials")
+      }
+
+      // Redirect or set session here
+      alert("✅ Login successful!")
+    } catch (err: any) {
+      setError(err.message || "Login failed")
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
-    <div className="flex flex-col items-start">
-      {!expanded ? (
-        <button
-          onClick={() => setExpanded(true)}
-          className="px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-700"
-        >
-          Login
-        </button>
-      ) : (
-        <form onSubmit={handleSubmit} className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setMode("login")}
-            className={`px-3 py-1 rounded ${
-              mode === "login" ? "bg-blue-500 text-white" : "bg-gray-200"
-            }`}
-          >
-            Login
-          </button>
-          <button
-            type="button"
-            onClick={() => setMode("signup")}
-            className={`px-3 py-1 rounded ${
-              mode === "signup" ? "bg-green-500 text-white" : "bg-gray-200"
-            }`}
-          >
-            Signup
-          </button>
+    <form
+      onSubmit={handleSubmit}
+      className="max-w-md mx-auto p-6 bg-white dark:bg-gray-900 rounded-lg shadow"
+    >
+      <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-100">
+        Login
+      </h2>
 
-          <input
-            type="text"
-            placeholder="Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="border rounded px-2 py-1"
-          />
-          <input
-            type="password"
-            placeholder="Pass"
-            value={pass}
-            onChange={(e) => setPass(e.target.value)}
-            className="border rounded px-2 py-1"
-          />
-
-          <button
-            type="submit"
-            className="px-3 py-1 bg-gray-800 text-white rounded hover:bg-gray-700"
-          >
-            Done
-          </button>
-        </form>
+      {error && (
+        <p className="text-red-500 mb-2 text-sm">
+          {error}
+        </p>
       )}
-    </div>
+
+      <input
+        type="email"
+        placeholder="Email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        required
+        className="w-full mb-3 px-3 py-2 border rounded-lg bg-gray-50 dark:bg-gray-800 dark:text-white"
+      />
+
+      <input
+        type="password"
+        placeholder="Password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        required
+        className="w-full mb-3 px-3 py-2 border rounded-lg bg-gray-50 dark:bg-gray-800 dark:text-white"
+      />
+
+      <button
+        type="submit"
+        disabled={loading}
+        className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+      >
+        {loading ? "Logging in..." : "Login"}
+      </button>
+    </form>
   )
 }
