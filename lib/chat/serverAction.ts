@@ -1,18 +1,14 @@
+// lib/chat/serverAction.ts
 'use server'
 
 import { nanoid } from '@/lib/utils'
-import type { Message } from '@/lib/types'
 
-export async function sendMessage(content: string): Promise<Message> {
-  // Return a tool_result message matching the expected type
+// Temporary sendMessage stub — safe for the new Chat component
+export async function sendMessage(message: string) {
+  // Normally: call AI / database / API here
   return {
     id: nanoid(),
-    role: 'tool',
-    content: [
-      {
-        type: 'tool_result',
-        result: content
-      }
-    ]
+    role: 'assistant' as const,
+    text: `You sent: "${message}". (AI not yet integrated in baseline)`
   }
 }
