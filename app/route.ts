@@ -1,38 +1,40 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from 'next/server'
 
 interface User {
-  username: string;
-  password: string;
+  username: string
+  password: string
 }
 
-// Simple in-memory storage (replace with DB in production)
-const users: User[] = [];
+// Simple in-memory user storage (replace with DB in production)
+const users: User[] = []
 
-export async function POST(req: NextRequest) {
-  const { username, password, action } = await req.json();
+export async function POST(req: Request) {
+  const url = new URL(req.url)
+  const path = url.pathname.split('/').pop() // login or signup
 
-  if (!username || !password || !action) {
-    return NextResponse.json(
-      { error: "Missing username, password, or action" },
-      { status: 400 }
-    );
+  const body = await req.json()
+  const { username, password } = body
+
+  if (!username || !password) {
+    return NextResponse.json({ success: false, message: 'Missing credentials' })
   }
 
-  if (action === "signup") {
-    if (users.find((u) => u.username === username)) {
-      return NextResponse.json({ error: "User already exists" }, { status: 400 });
+  if (path === 'signup') {
+    const exists = users.find((u) => u.username === username)
+    if (exists) {
+      return NextResponse.json({ success: false, message: 'Username exists' })
     }
-    users.push({ username, password });
-    return NextResponse.json({ success: true, username });
+    users.push({ username, password })
+    return NextResponse.json({ success: true, message: 'Account created' })
   }
 
-  if (action === "login") {
-    const user = users.find((u) => u.username === username && u.password === password);
-    if (!user) {
-      return NextResponse.json({ error: "Invalid username or password" }, { status: 401 });
+  if (path === 'login') {
+    const user = users.find((u) => u.username === username && u.password === password)
+    if (user) {
+      return NextResponse.json({ success: true, message: 'Login successful' })
     }
-    return NextResponse.json({ success: true, username });
+    return NextResponse.json({ success: false, message: 'Invalid credentials' })
   }
 
-  return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+  return NextResponse.json({ success: false, message: 'Invalid request' })
 }
