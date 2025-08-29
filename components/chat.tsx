@@ -1,3 +1,5 @@
+'use client'
+
 import { useState } from 'react'
 import type { Message } from '@/lib/types'
 import { sendMessage } from '@/lib/chat/serverAction'
@@ -5,48 +7,44 @@ import { nanoid } from '@/lib/utils'
 
 interface ChatProps {
   id: string
-  initialMessages?: Message[]
+  missingKeys: string[]
 }
 
-export function Chat({ id, initialMessages = [] }: ChatProps) {
-  const [messages, setMessages] = useState<Message[]>(initialMessages)
-  const [input, setInput] = useState('')
+export function Chat({ id, missingKeys }: ChatProps) {
+  const [messages, setMessages] = useState<Message[]>([])
 
-  const handleSend = async () => {
-    if (!input.trim()) return
-    const userMessage: Message = {
+  const handleSend = async (content: string) => {
+    const newMessage: Message = {
       id: nanoid(),
       role: 'user',
-      content: [{ type: 'tool_result', result: input }]
+      content
     }
-    setMessages(prev => [...prev, userMessage])
-    setInput('')
 
-    const response = await sendMessage(input)
-    setMessages(prev => [...prev, response])
+    setMessages((prev) => [...prev, newMessage])
+
+    const response = await sendMessage(content)
+    setMessages((prev) => [...prev, response])
   }
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex-1 overflow-y-auto p-4">
-        {messages.map(msg => (
-          <div key={msg.id} className="mb-2">
-            {msg.content.map((c, idx) => (
-              <p key={idx}>{c.result}</p>
-            ))}
-          </div>
-        ))}
-      </div>
-      <div className="p-2 border-t flex gap-2">
-        <input
-          className="flex-1 border rounded px-2"
-          value={input}
-          onChange={e => setInput(e.target.value)}
-        />
-        <button onClick={handleSend} className="px-4 py-2 bg-blue-500 text-white rounded">
-          Send
-        </button>
-      </div>
+      {/* Render messages */}
+      {messages.map((msg) => (
+        <div key={msg.id}>{msg.content}</div>
+      ))}
+
+      {/* Example input */}
+      <input
+        type="text"
+        className="border p-2"
+        placeholder="Type a message..."
+        onKeyDown={async (e) => {
+          if (e.key === 'Enter') {
+            await handleSend((e.target as HTMLInputElement).value)
+            ;(e.target as HTMLInputElement).value = ''
+          }
+        }}
+      />
     </div>
   )
 }
