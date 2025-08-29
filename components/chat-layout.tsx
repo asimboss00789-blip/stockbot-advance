@@ -1,40 +1,37 @@
 'use client'
 
 import { useState } from 'react'
-import { ChatList } from './chat-list'
-import { Chat } from './chat-panel' // or './chat' if using Chat component
 import { Trash2, BookOpen } from 'lucide-react'
+import { ChatList } from './chat-list'
+import { ChatPanel } from './chat-panel'
 
-interface ChatLayoutProps {
+export interface ChatLayoutProps {
   chatId: string
-  missingKeys?: string[]
+  missingKeys: string[]
 }
 
 export function ChatLayout({ chatId, missingKeys }: ChatLayoutProps) {
-  const [selectedChatId, setSelectedChatId] = useState(chatId)
+  const [input, setInput] = useState('')
+  const [isAtBottom, setIsAtBottom] = useState(true)
+
+  const scrollToBottom = () => {
+    const chatContainer = document.getElementById('chat-container')
+    chatContainer?.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' })
+  }
 
   return (
-    <div className="flex h-full w-full">
-      {/* Chat list / sidebar */}
-      <aside className="w-72 border-r p-4 overflow-y-auto bg-gray-50 dark:bg-gray-900">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-bold text-lg">Chats</h2>
-          <Trash2 className="cursor-pointer" />
-        </div>
-        <ChatList messages={[]} isShared={false} />
-      </aside>
+    <div className="flex flex-col h-screen">
+      <div className="flex-1 overflow-y-auto" id="chat-container">
+        <ChatList messages={[]} session={undefined} isShared={false} />
+      </div>
 
-      {/* Main chat panel */}
-      <main className="flex-1 flex flex-col">
-        <header className="p-4 border-b flex items-center justify-between bg-white dark:bg-gray-800">
-          <h1 className="font-semibold">Chat</h1>
-          <BookOpen className="cursor-pointer" />
-        </header>
-
-        <div className="flex-1">
-          <Chat id={selectedChatId} missingKeys={missingKeys} />
-        </div>
-      </main>
+      <ChatPanel
+        id={chatId}
+        input={input}
+        setInput={setInput}
+        isAtBottom={isAtBottom}
+        scrollToBottom={scrollToBottom}
+      />
     </div>
   )
 }
