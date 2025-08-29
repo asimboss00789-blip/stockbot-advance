@@ -3,6 +3,8 @@ import { Chat } from '@/components/chat'
 import { AI } from '@/lib/chat/actions'
 import { getMissingKeys } from '@/app/actions'
 import ChatLayout from '@/components/layouts/chat-layout'
+import LoginForm from '@/components/LoginForm'
+import DarkModeToggle from '@/components/DarkModeToggle'
 
 export const metadata = {
   title: 'Lumina AI'
@@ -14,13 +16,20 @@ export default async function IndexPage() {
 
   return (
     <ChatLayout>
+      {/* Top section: login + dark mode */}
+      <div className="p-4 border-b flex justify-between items-center">
+        <LoginForm />
+        <DarkModeToggle />
+      </div>
+
+      {/* Main AI chat */}
       <AI
         initialAIState={{
           chatId: id,
           messages: [
             {
-              id: nanoid(),     // Unique ID required
-              role: 'system',   // System message
+              id: nanoid(), // Unique ID required
+              role: 'system', // System message
               content: `
 Identity:
   • Name: Lumina
