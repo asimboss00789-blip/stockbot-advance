@@ -1,26 +1,30 @@
 'use server'
 
-import { getMutableAIState } from './state'
-import { AI } from './actions'
+import { getMutableAIState } from '@/lib/chat/state' // adjust according to your state
+import { AI } from './actions' // import AI type if needed
 
-// Server-side function to submit a user message
+// Submit user message
 export async function submitUserMessage(content: string) {
   const aiState = getMutableAIState<typeof AI>()
-  
-  // You can keep your existing logic here
   aiState.messages.push({
     id: crypto.randomUUID(),
     role: 'user',
-    content,
+    content
   })
 
-  // Example: simulate AI response
-  const aiResponse = await AI.generate(content)
+  // Process AI response here (dummy example)
+  const aiResponse = `AI Response to: ${content}`
   aiState.messages.push({
     id: crypto.randomUUID(),
     role: 'assistant',
-    content: aiResponse,
+    content: aiResponse
   })
 
   return aiResponse
+}
+
+// Fetch AI messages for a chat
+export async function fetchChatMessages(chatId: string) {
+  const aiState = getMutableAIState<typeof AI>()
+  return aiState.messages.filter(msg => msg.chatId === chatId)
 }
