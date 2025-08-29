@@ -1,42 +1,33 @@
 'use server'
 
-import { getMutableAIState } from 'ai/rsc'
-import { AIState } from './types' // if you have types defined
-import { nanoid } from '@/lib/utils'
+import { getMutableAIState, createAI } from 'ai/rsc'
+import { AIState } from '@/lib/types'
 
-// Example: submit a user message
+/**
+ * Submit a user message to AI and update the state.
+ */
 export async function submitUserMessage(content: string) {
-  const aiState = getMutableAIState<AIState>()
+  const aiState = getMutableAIState<typeof AIState>()
 
-  const newMessage = {
-    id: nanoid(),
-    role: 'user',
-    content
-  }
+  // Update AI state with the new user message
+  aiState.update({
+    ...aiState.get(),
+    messages: [
+      ...aiState.get().messages,
+      { id: crypto.randomUUID(), role: 'user', content }
+    ]
+  })
+
+  // Generate AI response (dummy for now, replace with real AI call)
+  const aiResponse = `AI Reply to: ${content}`
 
   aiState.update({
     ...aiState.get(),
-    messages: [...aiState.get().messages, newMessage]
+    messages: [
+      ...aiState.get().messages,
+      { id: crypto.randomUUID(), role: 'assistant', content: aiResponse }
+    ]
   })
 
-  // Here you can trigger AI response generation if needed
-  // e.g., await generateAIResponse(aiState)
-  return newMessage
-}
-
-// Example: a server-side function to fetch AI data
-export async function generateAIResponse(aiState: any) {
-  // logic to call AI model / Groq / Hugging Face
-  const responseMessage = {
-    id: nanoid(),
-    role: 'assistant',
-    content: 'AI generated content here'
-  }
-
-  aiState.update({
-    ...aiState.get(),
-    messages: [...aiState.get().messages, responseMessage]
-  })
-
-  return responseMessage
+  return aiResponse
 }
